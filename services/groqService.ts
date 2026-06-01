@@ -15,9 +15,12 @@ import {
 } from "../types";
 
 // ─── Client Setup ──────────────────────────────────────────────────────────────
-// API key is injected at build time via vite.config.ts → import.meta.env.VITE_GROQ_API_KEY
+// IMPORTANT: Groq SDK throws if apiKey is empty/falsy at init time.
+// We use a placeholder so the module loads safely even when key is missing.
+// If VITE_GROQ_API_KEY is not set in Vercel, API calls return 401 (caught by try/catch).
+// Set VITE_GROQ_API_KEY in: Vercel Dashboard → Project → Settings → Environment Variables
 const groq = new Groq({
-  apiKey: import.meta.env.VITE_GROQ_API_KEY || "",
+  apiKey: import.meta.env.VITE_GROQ_API_KEY || 'set-VITE_GROQ_API_KEY-in-vercel',
   dangerouslyAllowBrowser: true, // Required for client-side usage
 });
 

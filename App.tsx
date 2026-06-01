@@ -329,9 +329,18 @@ const App: React.FC = () => {
       return Math.max(...res.timeline.map(t => t.insulin));
   };
 
+  const isApiKeyMissing = !import.meta.env.VITE_GROQ_API_KEY;
+
   return (
     <div className="min-h-screen text-zinc-100 flex flex-col font-sans selection:bg-primary/30 selection:text-white">
-      
+      {/* ── API Key Warning Banner ── */}
+      {isApiKeyMissing && (
+        <div style={{position:'fixed',top:0,left:0,right:0,zIndex:200,background:'rgba(244,63,94,0.92)',backdropFilter:'blur(8px)',color:'#fff',textAlign:'center',padding:'8px 16px',fontSize:'12px',fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:'8px'}}>
+          <span>⚠️ VITE_GROQ_API_KEY is not set — AI features disabled.</span>
+          <span>Add it in Vercel → Project → Settings → Environment Variables, then redeploy.</span>
+        </div>
+      )}
+
       {/* Navbar */}
       <header className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
         <div className="glass-panel rounded-full px-2 py-2 flex items-center gap-4 pointer-events-auto shadow-2xl shadow-black/50">
