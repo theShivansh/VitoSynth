@@ -1,10 +1,26 @@
 import React, { useState } from 'react';
 import { generateScenarios, generateLifestyleProjection, generateStressScenarios, generateFutureSelfProjection } from '../services/groqService';
-import { Scenario, LifestyleProjection, FutureSelfProjection } from '../types';
-import { ArrowRight, BarChart2, Calendar, Check, ChevronRight, FlaskConical, TrendingUp, X, Activity, UserPlus, Clock } from 'lucide-react';
+import { Scenario, LifestyleProjection, FutureSelfProjection, UserProfile } from '../types';
+import { ArrowRight, BarChart2, Calendar, FlaskConical, TrendingUp, Activity, UserPlus, Clock } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine, Cell } from 'recharts';
-import { INITIAL_USER_PROFILE } from '../App';
+
+// Inline fallback profile — avoids circular import from App.tsx
+const FALLBACK_PROFILE: UserProfile = {
+  age: 45,
+  weight: 85,
+  height: 178,
+  gender: 'male',
+  activityLevel: 'moderate',
+  conditions: ['Pre-diabetes', 'Hypertension'],
+  dietaryRestrictions: [],
+  goals: ['Reduce HbA1c', 'Lose 5kg'],
+  targetCalories: 2200,
+  chronotype: 'intermediate',
+  sleepWindow: '23:00-07:00',
+  gamification: { points: 1250, level: 2, currentStreak: 4, badges: [] },
+  savedRecipes: [],
+};
 
 interface WhatIfSimulatorProps {
   currentMealName?: string;
@@ -87,12 +103,16 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ currentMealNam
   const [lifestyleResults, setLifestyleResults] = useState<LifestyleProjection[] | null>(null);
   const [futureSelfResults, setFutureSelfResults] = useState<FutureSelfProjection[] | null>(null);
   const [habitInput, setHabitInput] = useState('');
+  const [mealOverride, setMealOverride] = useState('');
+
+  // Use the provided meal name, or let the user type one directly in the UI
+  const effectiveMeal = currentMealName || mealOverride;
 
   const handleRunScenarios = async () => {
-    if (!currentMealName) return;
+    if (!effectiveMeal) return;
     setLoading(true);
     try {
-      const data = await generateScenarios(currentMealName);
+      const data = await generateScenarios(effectiveMeal);
       setScenarios(data);
     } catch (e) {
       console.error(e);
@@ -101,11 +121,10 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ currentMealNam
   };
 
   const handleRunStressTest = async () => {
-    if (!currentMealName) return;
+    if (!effectiveMeal) return;
     setLoading(true);
     try {
-        const mockProfile = INITIAL_USER_PROFILE; 
-        const data = await generateStressScenarios(currentMealName, mockProfile);
+        const data = await generateStressScenarios(effectiveMeal, FALLBACK_PROFILE);
         setStressScenarios(data);
     } catch (e) {
         console.error(e);
@@ -114,10 +133,10 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ currentMealNam
   };
 
   const handleRunFutureSelf = async () => {
-      if (!currentMealName) return;
+      if (!effectiveMeal) return;
       setLoading(true);
       try {
-          const data = await generateFutureSelfProjection(currentMealName);
+          const data = await generateFutureSelfProjection(effectiveMeal);
           setFutureSelfResults(data);
       } catch (e) {
           console.error(e);
@@ -182,11 +201,23 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ currentMealNam
                          </div>
                          <h3 className="text-xl font-bold text-white">Compare Alternatives</h3>
                          <p className="text-sm text-zinc-400 max-w-md mx-auto leading-relaxed">
-                            Analyze "{currentMealName || 'your meal'}" against healthy and modified alternatives to see predicted metabolic outcomes.
+                            {effectiveMeal
+                              ? `Analyze "${effectiveMeal}" against healthy and modified alternatives.`
+                              : 'Simulate any meal below, or first scan one on the Dashboard.'}
                          </p>
+                         {!currentMealName && (
+                           <div className="flex max-w-sm mx-auto gap-2">
+                             <input
+                               value={mealOverride}
+                               onChange={e => setMealOverride(e.target.value)}
+                               placeholder="Type a meal (e.g. Biryani)…"
+                               className="flex-1 glass-input rounded-xl px-4 py-2 text-sm text-white placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-primary"
+                             />
+                           </div>
+                         )}
                          <button 
                             onClick={handleRunScenarios}
-                            disabled={!currentMealName || loading}
+                            disabled={!effectiveMeal || loading}
                             className="glass-button bg-primary/80 hover:bg-primary text-black px-8 py-3 rounded-full font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto shadow-[0_0_20px_rgba(0,245,225,0.3)]"
                          >
                             {loading ? 'Simulating...' : 'Run Analysis'}
@@ -215,11 +246,21 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ currentMealNam
                          </div>
                          <h3 className="text-xl font-bold text-white">Physiological Stress Test</h3>
                          <p className="text-sm text-zinc-400 max-w-md mx-auto leading-relaxed">
-                            Simulate how this exact meal impacts your body differently when you are Sleep Deprived or Post-Workout compared to Baseline.
+                            Simulate how this exact meal impacts your body differently when Sleep Deprived or Post-Workout.
                          </p>
+                         {!currentMealName && (
+                           <div className="flex max-w-sm mx-auto gap-2">
+                             <input
+                               value={mealOverride}
+                               onChange={e => setMealOverride(e.target.value)}
+                               placeholder="Type a meal (e.g. Biryani)…"
+                               className="flex-1 glass-input rounded-xl px-4 py-2 text-sm text-white placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-primary"
+                             />
+                           </div>
+                         )}
                          <button 
                             onClick={handleRunStressTest}
-                            disabled={!currentMealName || loading}
+                            disabled={!effectiveMeal || loading}
                             className="glass-button bg-rose-500 hover:bg-rose-400 text-white px-8 py-3 rounded-full font-bold disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 mx-auto shadow-[0_0_20px_rgba(244,63,94,0.3)]"
                          >
                             {loading ? 'Running Sim...' : 'Run Stress Test'}
@@ -250,9 +291,19 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ currentMealNam
                         <p className="text-sm text-zinc-400 max-w-md mx-auto leading-relaxed">
                            See the cumulative impact of eating this meal (3x/week) over the next 1, 5, and 10 years.
                         </p>
+                        {!currentMealName && (
+                          <div className="flex max-w-sm mx-auto gap-2">
+                            <input
+                              value={mealOverride}
+                              onChange={e => setMealOverride(e.target.value)}
+                              placeholder="Type a meal (e.g. Biryani)…"
+                              className="flex-1 glass-input rounded-xl px-4 py-2 text-sm text-white placeholder:text-zinc-600 outline-none focus:ring-1 focus:ring-primary"
+                            />
+                          </div>
+                        )}
                         <button 
                             onClick={handleRunFutureSelf}
-                            disabled={!currentMealName || loading}
+                            disabled={!effectiveMeal || loading}
                             className="glass-button bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-3 rounded-full font-bold disabled:opacity-50 flex items-center gap-2 mx-auto shadow-[0_0_20px_rgba(99,102,241,0.3)]"
                         >
                             {loading ? 'Projecting...' : 'View Future Impact'}

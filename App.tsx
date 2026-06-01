@@ -168,18 +168,28 @@ const App: React.FC = () => {
 
   const handleChatSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!userQuery) return;
+    const trimmed = userQuery.trim();
+    if (!trimmed) return;
     
-    const newHistory = [...chatMessages, { role: 'user' as const, text: userQuery }];
+    const newHistory = [...chatMessages, { role: 'user' as const, text: trimmed }];
     setChatMessages(newHistory);
     setUserQuery('');
     
     try {
-        const context = result ? { food: result.foodName, stress: result.organStress } : "No food scanned yet.";
-        const aiResponse = await getCoachResponse(newHistory.map(m => m.text), userQuery, context);
-        setChatMessages([...newHistory, { role: 'ai' as const, text: aiResponse || "I'm thinking..." }]);
+        // Build a safe, serializable context string
+        let contextStr = 'No food scanned yet.';
+        if (result) {
+          contextStr = `Food: ${result.foodName}. Organ stress: pancreas=${result.organStress?.pancreas}, liver=${result.organStress?.liver}, brain=${result.organStress?.brain}. Analysis: ${result.analysis?.slice(0, 200) ?? ''}`;
+        }
+        const aiResponse = await getCoachResponse(
+          newHistory.map(m => m.text),
+          trimmed,
+          contextStr
+        );
+        setChatMessages(prev => [...prev, { role: 'ai' as const, text: aiResponse || "I'm here to help!" }]);
     } catch(e) {
-        setChatMessages([...newHistory, { role: 'ai' as const, text: "Sorry, I lost connection." }]);
+        console.error('Coach error:', e);
+        setChatMessages(prev => [...prev, { role: 'ai' as const, text: "Sorry, I had trouble processing that. Please try again." }]);
     }
   };
 
@@ -716,60 +726,27 @@ const App: React.FC = () => {
 
                     {chatOpen && (
                         <>
-                            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black/20 relative">
-                                {isLive ? (
-                                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-xl z-10 animate-in fade-in duration-500">
-                                        <div className="w-32 h-32 rounded-full bg-primary/10 flex items-center justify-center mb-6 relative">
-                                            {/* Visualizer Rings */}
-                                            <div className="absolute inset-0 rounded-full border border-primary/30 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite]" />
-                                            <div className="absolute inset-2 rounded-full border border-primary/20 animate-[ping_2s_cubic-bezier(0,0,0.2,1)_infinite] delay-300" />
-                                            <div 
-                                                className="w-full h-full rounded-full bg-primary/20 absolute transition-all duration-75 ease-out blur-xl"
-                                                style={{ transform: `scale(${1 + liveVolume * 0.08})` }} 
-                                            />
-                                            <Headphones className="w-12 h-12 text-primary z-10" />
+                            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black/20">
+                                {chatMessages.map((msg, i) => (
+                                    <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 fade-in duration-300`}>
+                                        <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-primary text-black font-medium rounded-br-sm shadow-[0_0_15px_rgba(0,245,225,0.2)]' : 'bg-white/10 text-zinc-100 rounded-bl-sm border border-white/5'}`}>
+                                            {msg.text}
                                         </div>
-                                        <h3 className="text-2xl font-bold text-white mb-2">Listening...</h3>
-                                        <p className="text-sm text-zinc-400 font-mono mb-8 bg-black/40 px-3 py-1 rounded-full">{liveStatus}</p>
-                                        <button 
-                                            onClick={toggleLiveSession}
-                                            className="px-8 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-full font-bold flex items-center gap-2 transition-colors shadow-lg shadow-rose-500/30"
-                                        >
-                                            <X className="w-5 h-5" /> End Session
-                                        </button>
                                     </div>
-                                ) : (
-                                    chatMessages.map((msg, i) => (
-                                        <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} animate-in slide-in-from-bottom-2 fade-in duration-300`}>
-                                            <div className={`max-w-[85%] p-4 rounded-2xl text-sm leading-relaxed ${msg.role === 'user' ? 'bg-primary text-black font-medium rounded-br-sm shadow-[0_0_15px_rgba(0,245,225,0.2)]' : 'bg-white/10 text-zinc-100 rounded-bl-sm border border-white/5'}`}>
-                                                {msg.text}
-                                            </div>
-                                        </div>
-                                    ))
-                                )}
+                                ))}
                             </div>
                             
-                            {!isLive && (
-                                <form onSubmit={handleChatSubmit} className="p-4 border-t border-white/10 bg-black/40 flex gap-2">
-                                    <input 
-                                        value={userQuery}
-                                        onChange={e => setUserQuery(e.target.value)}
-                                        placeholder="Ask AI..."
-                                        className="flex-1 glass-input rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-500"
-                                    />
-                                    <button type="submit" className="p-3 rounded-xl bg-primary hover:bg-primaryDark text-black transition-all hover:scale-105 shadow-[0_0_10px_rgba(0,245,225,0.2)]">
-                                        <Send className="w-4 h-4" />
-                                    </button>
-                                    <button 
-                                        type="button" 
-                                        onClick={toggleLiveSession}
-                                        className="p-3 rounded-xl bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-primary transition-all hover:scale-105 border border-white/5"
-                                        title="Start Voice Session"
-                                    >
-                                        <Mic className="w-4 h-4" />
-                                    </button>
-                                </form>
-                            )}
+                            <form onSubmit={handleChatSubmit} className="p-4 border-t border-white/10 bg-black/40 flex gap-2">
+                                <input 
+                                    value={userQuery}
+                                    onChange={e => setUserQuery(e.target.value)}
+                                    placeholder="Ask AI..."
+                                    className="flex-1 glass-input rounded-xl px-4 py-3 text-sm text-white placeholder:text-zinc-500"
+                                />
+                                <button type="submit" className="p-3 rounded-xl bg-primary hover:bg-primaryDark text-black transition-all hover:scale-105 shadow-[0_0_10px_rgba(0,245,225,0.2)]">
+                                    <Send className="w-4 h-4" />
+                                </button>
+                            </form>
                         </>
                     )}
                 </div>
