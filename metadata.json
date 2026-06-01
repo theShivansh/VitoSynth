@@ -1,0 +1,8 @@
+{
+  "name": "VitoSynth AI",
+  "description": "A predictive metabolic digital twin that simulates biological responses to food in real-time using Gemini 3 Pro.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
