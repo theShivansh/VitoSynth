@@ -390,12 +390,17 @@ Respond in 1-2 sentences maximum. Be encouraging and scientifically accurate.`,
       model: FAST_MODEL,
       messages,
       temperature: 0.5,
-      max_tokens: 150,
+      max_tokens: 200,
     });
-    return res.choices[0]?.message?.content || "I'm here to help! Ask me anything about your meal.";
-  } catch (e) {
-    console.error(e);
-    return "I'm having trouble connecting right now. Please try again.";
+    return res.choices[0]?.message?.content || "I'm here to help! Ask me anything about your health.";
+  } catch (e: any) {
+    console.error('[Coach]', e);
+    const msg = String(e?.message ?? e?.status ?? '');
+    // 401 = API key not set in Vercel environment variables
+    if (e?.status === 401 || msg.includes('401') || msg.includes('API key') || msg.includes('Invalid API')) {
+      return "⚠️ The Groq API key is not configured. Go to Vercel → Project Settings → Environment Variables and add VITE_GROQ_API_KEY, then redeploy.";
+    }
+    return "I'm having trouble connecting right now. Please try again in a moment.";
   }
 };
 
@@ -498,7 +503,7 @@ export const generateFutureSelfProjection = async (
     {
       role: "system",
       content:
-        "You are a long-term metabolic biomarker projection system. Return ONLY valid JSON.",
+        "You are a long-term metabolic biomarker projection system. Return ONLY valid JSON. biomarkerDrift MUST be a JSON array of strings.",
     },
     {
       role: "user",
@@ -506,17 +511,39 @@ export const generateFutureSelfProjection = async (
 Project the cumulative biological impact of eating this meal 3 times/week for 1, 5, and 10 years.
 Assume sedentary baseline lifestyle.
 
-Return JSON array:
+Return a JSON ARRAY (not an object) with exactly 3 elements:
 [
   {"period": "1 Year", "weightChange": number, "biomarkerDrift": ["string", "string"], "description": "string"},
   {"period": "5 Years", "weightChange": number, "biomarkerDrift": ["string", "string"], "description": "string"},
   {"period": "10 Years", "weightChange": number, "biomarkerDrift": ["string", "string"], "description": "string"}
-]`,
+]
+biomarkerDrift must be an array of short strings like ["HbA1c +0.5%", "Liver fat increased"].`,
     },
   ];
 
   const text = await callGroq(TEXT_MODEL, messages);
-  return JSON.parse(cleanJson(text));
+  const raw = JSON.parse(cleanJson(text));
+
+  // Normalize: handle cases where LLM returns an object wrapper or biomarkerDrift as string
+  const arr: any[] = Array.isArray(raw)
+    ? raw
+    : Array.isArray(raw?.data)
+      ? raw.data
+      : Array.isArray(raw?.projections)
+        ? raw.projections
+        : [raw];
+
+  return arr.map((item: any) => ({
+    period: String(item?.period ?? ''),
+    weightChange: Number(item?.weightChange ?? 0),
+    // biomarkerDrift: LLM sometimes returns string instead of array — normalize
+    biomarkerDrift: Array.isArray(item?.biomarkerDrift)
+      ? item.biomarkerDrift.map(String)
+      : typeof item?.biomarkerDrift === 'string'
+        ? item.biomarkerDrift.split(/[,;|]/).map((s: string) => s.trim()).filter(Boolean)
+        : [],
+    description: String(item?.description ?? ''),
+  }));
 };
 
 // ─── Genetic Analysis ───────────────────────────────────────────────────────────

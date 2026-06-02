@@ -1,9 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, Component } from 'react';
 import { generateScenarios, generateLifestyleProjection, generateStressScenarios, generateFutureSelfProjection } from '../services/groqService';
 import { Scenario, LifestyleProjection, FutureSelfProjection, UserProfile } from '../types';
-import { ArrowRight, BarChart2, Calendar, FlaskConical, TrendingUp, Activity, UserPlus, Clock } from 'lucide-react';
+import { ArrowRight, BarChart2, Calendar, FlaskConical, TrendingUp, Activity, UserPlus, Clock, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, ReferenceLine, Cell } from 'recharts';
+
+// ── Local Error Boundary ─────────────────────────────────────────────────────
+// Prevents WhatIfSimulator render errors from crashing the entire App
+class SimulatorErrorBoundary extends Component<
+  { children: React.ReactNode },
+  { error: string | null }
+> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { error: null };
+  }
+  static getDerivedStateFromError(e: Error) { return { error: e.message }; }
+  componentDidCatch(e: Error) { console.error('[WhatIfSimulator]', e); }
+  render() {
+    if (this.state.error) {
+      return (
+        <div className="glass-panel border border-rose-500/20 rounded-3xl p-8 flex flex-col items-center gap-4 text-center">
+          <AlertTriangle className="w-10 h-10 text-rose-400" />
+          <h3 className="font-bold text-white">Simulator Error</h3>
+          <p className="text-xs text-zinc-400 max-w-sm leading-relaxed">{this.state.error}</p>
+          <button
+            onClick={() => this.setState({ error: null })}
+            className="glass-button text-primary px-6 py-2 rounded-full text-sm font-bold"
+          >
+            Try Again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 
 // Inline fallback profile — avoids circular import from App.tsx
 const FALLBACK_PROFILE: UserProfile = {
@@ -95,7 +128,8 @@ const ScenarioCard: React.FC<{ scenario: Scenario }> = ({ scenario }) => {
   );
 };
 
-export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ currentMealName }) => {
+// Wrapped export — SimulatorErrorBoundary catches any render crash locally
+const WhatIfSimulatorInner: React.FC<WhatIfSimulatorProps> = ({ currentMealName }) => {
   const [activeTab, setActiveTab] = useState<'meal' | 'lifestyle' | 'stress' | 'future'>('meal');
   const [loading, setLoading] = useState(false);
   const [scenarios, setScenarios] = useState<Scenario[] | null>(null);
@@ -327,13 +361,13 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ currentMealNam
                                         {res.weightChange > 0 ? '+' : ''}{res.weightChange}kg
                                      </div>
                                      
-                                     <div className="space-y-1 my-2 relative z-10">
-                                         {res.biomarkerDrift.map((drift, k) => (
-                                             <div key={k} className="text-[10px] font-mono px-2 py-1 rounded bg-black/40 text-zinc-300 border border-white/5 inline-block mr-1">
-                                                 {drift}
-                                             </div>
-                                         ))}
-                                     </div>
+                                      <div className="space-y-1 my-2 relative z-10">
+                                          {(Array.isArray(res.biomarkerDrift) ? res.biomarkerDrift : []).map((drift, k) => (
+                                              <div key={k} className="text-[10px] font-mono px-2 py-1 rounded bg-black/40 text-zinc-300 border border-white/5 inline-block mr-1">
+                                                  {drift}
+                                              </div>
+                                          ))}
+                                      </div>
 
                                      <p className="text-xs text-zinc-500 leading-relaxed font-light border-t border-white/5 pt-3">
                                          "{res.description}"
@@ -430,3 +464,9 @@ export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = ({ currentMealNam
     </div>
   );
 };
+
+export const WhatIfSimulator: React.FC<WhatIfSimulatorProps> = (props) => (
+  <SimulatorErrorBoundary>
+    <WhatIfSimulatorInner {...props} />
+  </SimulatorErrorBoundary>
+);
