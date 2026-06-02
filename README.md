@@ -602,7 +602,7 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ## 👤 Author
 
-**Shailendra** — Built with a vision to democratize precision nutrition for everyone.
+**Shivansh** — Built with a vision to democratize precision nutrition for everyone.
 
 [![GitHub](https://img.shields.io/badge/GitHub-theShivansh-181717?style=flat-square&logo=github)](https://github.com/theShivansh)
 
