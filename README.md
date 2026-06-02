@@ -8,7 +8,7 @@
 
 **Predict how any food will reshape your biology — before you take a single bite.**
 
-[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Visit_App-00F5E1?style=for-the-badge)](https://vitosynth.vercel.app)
+[![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-Visit_App-00F5E1?style=for-the-badge)](https://vito-synth.vercel.app/)
 [![Groq AI](https://img.shields.io/badge/Powered_by-Groq_AI-F55036?style=for-the-badge&logo=groq)](https://groq.com)
 [![Llama 4](https://img.shields.io/badge/Model-Llama_4_Maverick-8B5CF6?style=for-the-badge)](https://ai.meta.com/llama)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
