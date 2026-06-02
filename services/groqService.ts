@@ -27,7 +27,7 @@ const groq = new Groq({
 // Model constants
 const VISION_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"; // Multimodal: images + text
 const TEXT_MODEL = "llama-3.3-70b-versatile";   // Fast text reasoning
-const FAST_MODEL = "llama3-8b-8192";             // Fallback / lightweight tasks
+const FAST_MODEL = "llama-3.1-8b-instant";        // Lightweight / coach tasks (llama3-8b-8192 is deprecated)
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 const cleanJson = (text: string): string => {
@@ -35,6 +35,22 @@ const cleanJson = (text: string): string => {
     .replace(/```json/gi, "")
     .replace(/```/g, "")
     .trim();
+};
+
+/**
+ * CRITICAL: Groq's response_format:{type:"json_object"} forces the LLM to
+ * wrap top-level arrays in an object (e.g. {"scenarios":[...]} or {"data":[...]}).
+ * This helper extracts the first array found in the parsed JSON,
+ * regardless of what key the LLM chose to wrap it with.
+ */
+const extractArray = <T = any>(raw: unknown): T[] => {
+  if (Array.isArray(raw)) return raw as T[];
+  if (raw !== null && typeof raw === 'object') {
+    for (const val of Object.values(raw as Record<string, unknown>)) {
+      if (Array.isArray(val)) return val as T[];
+    }
+  }
+  return [];
 };
 
 /** Calls Groq with automatic fallback on rate limits (429 / RESOURCE_EXHAUSTED) */
@@ -431,7 +447,8 @@ Return JSON array:
   ];
 
   const text = await callGroq(TEXT_MODEL, messages);
-  return JSON.parse(cleanJson(text));
+  // extractArray unwraps {scenarios:[...]} that response_format:json_object forces
+  return extractArray(JSON.parse(cleanJson(text)));
 };
 
 // ─── Physiological Stress Test ──────────────────────────────────────────────────
@@ -464,7 +481,7 @@ Return JSON array of 3 objects:
   ];
 
   const text = await callGroq(TEXT_MODEL, messages);
-  return JSON.parse(cleanJson(text));
+  return extractArray<Scenario>(JSON.parse(cleanJson(text)));
 };
 
 // ─── Lifestyle Habit Projector ──────────────────────────────────────────────────
@@ -492,7 +509,7 @@ Return JSON array:
   ];
 
   const text = await callGroq(TEXT_MODEL, messages);
-  return JSON.parse(cleanJson(text));
+  return extractArray<LifestyleProjection>(JSON.parse(cleanJson(text)));
 };
 
 // ─── Future Self Projection (10-Year) ──────────────────────────────────────────
@@ -523,20 +540,13 @@ biomarkerDrift must be an array of short strings like ["HbA1c +0.5%", "Liver fat
 
   const text = await callGroq(TEXT_MODEL, messages);
   const raw = JSON.parse(cleanJson(text));
-
-  // Normalize: handle cases where LLM returns an object wrapper or biomarkerDrift as string
-  const arr: any[] = Array.isArray(raw)
-    ? raw
-    : Array.isArray(raw?.data)
-      ? raw.data
-      : Array.isArray(raw?.projections)
-        ? raw.projections
-        : [raw];
+  // extractArray handles both direct arrays and object-wrapped arrays
+  const arr = extractArray<any>(raw);
 
   return arr.map((item: any) => ({
     period: String(item?.period ?? ''),
     weightChange: Number(item?.weightChange ?? 0),
-    // biomarkerDrift: LLM sometimes returns string instead of array — normalize
+    // Normalize biomarkerDrift — LLM sometimes returns a string instead of array
     biomarkerDrift: Array.isArray(item?.biomarkerDrift)
       ? item.biomarkerDrift.map(String)
       : typeof item?.biomarkerDrift === 'string'

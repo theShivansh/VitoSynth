@@ -259,7 +259,7 @@ const WhatIfSimulatorInner: React.FC<WhatIfSimulatorProps> = ({ currentMealName 
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {scenarios.map(s => <ScenarioCard key={s.id} scenario={s} />)}
+                        {(Array.isArray(scenarios) ? scenarios : []).map(s => <ScenarioCard key={s.id} scenario={s} />)}
                         <button 
                            onClick={() => setScenarios(null)} 
                            className="md:col-span-3 text-xs text-zinc-500 hover:text-white mt-4 underline text-center"
@@ -302,7 +302,7 @@ const WhatIfSimulatorInner: React.FC<WhatIfSimulatorProps> = ({ currentMealName 
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {stressScenarios.map(s => <ScenarioCard key={s.id} scenario={s} />)}
+                        {(Array.isArray(stressScenarios) ? stressScenarios : []).map(s => <ScenarioCard key={s.id} scenario={s} />)}
                         <button 
                            onClick={() => setStressScenarios(null)} 
                            className="md:col-span-3 text-xs text-zinc-500 hover:text-white mt-4 underline text-center"
@@ -350,7 +350,7 @@ const WhatIfSimulatorInner: React.FC<WhatIfSimulatorProps> = ({ currentMealName 
                         </h3>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            {futureSelfResults.map((res, i) => (
+                            {(Array.isArray(futureSelfResults) ? futureSelfResults : []).map((res, i) => (
                                 <div key={i} className="glass-panel p-6 rounded-2xl relative flex flex-col gap-3 group hover:border-indigo-500/30 transition-colors">
                                      <div className="absolute top-4 right-4 text-indigo-500/10 group-hover:text-indigo-500/20 transition-colors">
                                          <Clock className="w-16 h-16" />
@@ -419,7 +419,7 @@ const WhatIfSimulatorInner: React.FC<WhatIfSimulatorProps> = ({ currentMealName 
                         <h3 className="font-mono text-xs text-zinc-500 uppercase tracking-[0.2em] text-center">Projection: {habitInput}</h3>
                         
                         <div className="grid grid-cols-3 gap-4">
-                            {lifestyleResults.map((res, i) => (
+                            {(Array.isArray(lifestyleResults) ? lifestyleResults : []).map((res, i) => (
                                 <div key={i} className="glass-panel p-4 rounded-2xl relative overflow-hidden text-center">
                                      <div className="text-xs text-zinc-500 mb-2 font-bold uppercase">{res.period}</div>
                                      <div className="text-2xl font-black text-white mb-2 tracking-tight">
@@ -442,7 +442,7 @@ const WhatIfSimulatorInner: React.FC<WhatIfSimulatorProps> = ({ currentMealName 
                                     />
                                     <ReferenceLine y={0} stroke="#52525b" />
                                     <Bar dataKey="weightChange" name="Weight Change (kg)" radius={[6, 6, 0, 0]}>
-                                        {lifestyleResults.map((entry, index) => (
+                                        {(Array.isArray(lifestyleResults) ? lifestyleResults : []).map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={entry.weightChange > 0 ? '#FF2E63' : '#00F5E1'} />
                                         ))}
                                     </Bar>
