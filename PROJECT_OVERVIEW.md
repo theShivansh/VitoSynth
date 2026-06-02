@@ -7,7 +7,7 @@
 
 ---
 
-## ⚡ The Quick Tour (10-Second Elevator Pitch)
+## ⚡ The Quick Tour 
 
 Most health trackers look backward (logging what you already ate). **VitoSynth AI looks forward.** 
 
