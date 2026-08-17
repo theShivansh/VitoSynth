@@ -326,7 +326,7 @@ Fogg Behavior Model-inspired engagement system:
 ┌──────────────────────────▼──────────────────────────────────────┐
 │                     GROQ INFERENCE ENGINE                        │
 │  Vision/Multimodal: meta-llama/llama-4-maverick-17b-128e         │
-│  Deep Reasoning:    llama-3.3-70b-versatile                      │
+│  Deep Reasoning:    qwen/qwen3.6-27b                      │
 │  Fast Chat:         llama3-8b-8192  (Fallback)                   │
 └──────────────────────────────────────────────────────────────────┘
 ```
