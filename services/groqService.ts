@@ -25,7 +25,7 @@ const groq = new Groq({
 });
 
 // Model constants
-const VISION_MODEL = "meta-llama/llama-4-maverick-17b-128e-instruct"; // Multimodal: images + text
+const VISION_MODEL = "qwen/qwen3.6-27b";  // Multimodal: images + text
 const TEXT_MODEL = "qwen/qwen3.6-27b";   // Fast text reasoning
 const FAST_MODEL = "openai/gpt-oss-20b";        // Lightweight / coach tasks (llama3-8b-8192 is deprecated)
 
