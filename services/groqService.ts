@@ -26,8 +26,8 @@ const groq = new Groq({
 
 // Model constants
 const VISION_MODEL = "qwen/qwen3.6-27b";  // Multimodal: images + text
-const TEXT_MODEL = "qwen/qwen3.6-27b";   // Fast text reasoning
-const FAST_MODEL = "openai/gpt-oss-20b";        // Lightweight / coach tasks (llama3-8b-8192 is deprecated)
+const TEXT_MODEL = "openai/gpt-oss-120b";   // Fast text reasoning
+const FAST_MODEL = "openai/gpt-oss-20b";        // Lightweight / coach tasks 
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 const cleanJson = (text: string): string => {
